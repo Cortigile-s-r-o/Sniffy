@@ -110,8 +110,28 @@ To ještě automaticky neznamená, že každá z těchto desek bude mít ve vše
 ### Linux
 
 1. Nainstalujte distribuční balíček aplikace.
-2. Ověřte přístup k ST-Link bez sudo.
-3. Připojte desku a spusťte Sniffy.
+2. Zajistěte, že má váš uživatel přístup k USB debug zařízením (doporučené jednorázové nastavení):
+
+  ```bash
+  sudo usermod -aG plugdev $USER
+  ```
+
+  Poté se odhlaste a znovu přihlaste.
+
+3. Ověřte přístup k ST-Link bez sudo.
+
+  ```bash
+  st-info --probe
+  ```
+
+  Pokud `st-info` chybí, doinstalujte jej:
+
+  ```bash
+  sudo apt install stlink-tools
+  ```
+
+  Pokud se deska stále nezobrazuje, po přihlášení ji odpojte a znovu připojte.
+4. Připojte desku a spusťte Sniffy.
 
 ### Co se stane po startu aplikace
 

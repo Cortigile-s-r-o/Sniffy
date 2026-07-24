@@ -110,8 +110,28 @@ This does not automatically mean that every one of these boards will have the sa
 ### Linux
 
 1. Install the application's distribution package.
-2. Verify access to ST-Link without sudo.
-3. Connect the board and launch Sniffy.
+2. Ensure your user has access to USB debug devices (recommended one-time setup):
+
+  ```bash
+  sudo usermod -aG plugdev $USER
+  ```
+
+  Then log out and log in again.
+
+3. Verify access to ST-Link without sudo.
+
+  ```bash
+  st-info --probe
+  ```
+
+  If `st-info` is missing, install it:
+
+  ```bash
+  sudo apt install stlink-tools
+  ```
+
+  If the board still does not appear, unplug and reconnect it after login.
+4. Connect the board and launch Sniffy.
 
 ### What happens after the application starts
 

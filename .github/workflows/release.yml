@@ -4,7 +4,7 @@ on:
   push:
     tags:
       - 'desktop-v*' # Trigger on tags like desktop-v1.0.0, desktop-v2.3.4
-
+  workflow_dispatch:    
 permissions:
   contents: write
 
@@ -119,7 +119,9 @@ jobs:
         include:
           - os: windows-latest
             qt_arch: win64_mingw
-          - os: ubuntu-latest
+          # Build Linux artifacts on Jammy to avoid Debian t64 runtime dependency names
+          # that are not available on older Kubuntu releases.
+          - os: ubuntu-22.04
             qt_arch: linux_gcc_64
 
     steps:
@@ -128,21 +130,38 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install Qt
+      - name: Install Qt (Windows)
+        if: runner.os == 'Windows'
         uses: jurplel/install-qt-action@v3
         with:
           version: '6.8.0'
-          host: ${{ runner.os == 'Windows' && 'windows' || 'linux' }}
+          host: windows
           target: 'desktop'
           arch: ${{ matrix.qt_arch }}
           modules: 'qtcharts qtserialport'
-          tools: ${{ runner.os == 'Windows' && 'tools_mingw1310' || '' }}
-          
+          tools: tools_mingw1310
+
+      - name: Install Qt (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qt6-base-dev libqt6charts6-dev libqt6serialport6-dev
+
       - name: Install Linux Dependencies
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libgl1-mesa-dev libusb-1.0-0-dev libstlink-dev ninja-build libcups2-dev libvulkan-dev
+          sudo apt-get install -y build-essential libgl1-mesa-dev libusb-1.0-0-dev ninja-build libcups2-dev libvulkan-dev
+
+      - name: Build ST-Link 1.8 (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch v1.8.0 https://github.com/stlink-org/stlink.git "$RUNNER_TEMP/stlink"
+          cmake -S "$RUNNER_TEMP/stlink" -B "$RUNNER_TEMP/stlink-build" -G Ninja -DCMAKE_BUILD_TYPE=Release
+          cmake --build "$RUNNER_TEMP/stlink-build" --target stlink-static
+          echo "SNIFFY_STLINK_LIBRARY=$RUNNER_TEMP/stlink-build/lib/libstlink.a" >> "$GITHUB_ENV"
 
       - name: Setup Ninja (Windows)
         if: runner.os == 'Windows'

@@ -75,6 +75,34 @@ bool serialMatches(const stlink_t *stlink, const QString &serial)
     return QString::fromLatin1(stlink->serial).trimmed().compare(serial, Qt::CaseInsensitive) == 0;
 }
 
+QString resolveChipsDir()
+{
+    const QString envDir = qgetenv("STLINK_CHIPS_DIR");
+    if (!envDir.isEmpty() && QDir(envDir).exists())
+    {
+        return envDir;
+    }
+
+    const QString appDir = QCoreApplication::applicationDirPath();
+    const QStringList candidates = {
+        QDir(appDir).filePath("config/chips"),
+        QDir(appDir).filePath("../share/sniffy/chips"),
+        QStringLiteral("/usr/share/sniffy/chips"),
+        QStringLiteral("/usr/local/share/sniffy/chips"),
+        QStringLiteral("/usr/share/stlink/chips")
+    };
+
+    for (const QString &candidate : candidates)
+    {
+        if (QDir(candidate).exists())
+        {
+            return candidate;
+        }
+    }
+
+    return QString();
+}
+
 } // namespace
 
 StLinkConnector::StLinkConnector(QObject *parent)
@@ -106,20 +134,17 @@ void StLinkConnector::setPreferredPortHint(const QString &portName)
 bool StLinkConnector::init()
 {
     // Set STLINK_CHIPS_DIR to help libstlink find chip definitions
-    QString appDir = QCoreApplication::applicationDirPath();
+    QString chipsDir = resolveChipsDir();
 
-    // Construct path to config/chips
-    // Use QDir to handle separators, but force forward slashes for MinGW/libstlink compatibility
-    QString chipsDir = QDir(appDir).filePath("config/chips");
-    chipsDir = chipsDir.replace("\\", "/");
-
-    if (QDir(chipsDir).exists())
+    if (!chipsDir.isEmpty())
     {
+        // Force forward slashes for libstlink compatibility.
+        chipsDir = chipsDir.replace("\\", "/");
         qputenv("STLINK_CHIPS_DIR", chipsDir.toLocal8Bit());
     }
     else
     {
-        emit logMessage("Warning: Chips config dir not found at: " + chipsDir);
+        emit logMessage("Warning: Chips config dir not found. Tried app-relative and system locations.");
     }
 
     // Probe for devices
@@ -264,8 +289,13 @@ bool StLinkConnector::loadDeviceParamsFallback()
     QString chipsDir = qgetenv("STLINK_CHIPS_DIR");
     if (chipsDir.isEmpty())
     {
-        QString appDir = QCoreApplication::applicationDirPath();
-        chipsDir = QDir(appDir).filePath("config/chips");
+        chipsDir = resolveChipsDir();
+    }
+
+    if (chipsDir.isEmpty())
+    {
+        emit logMessage("No chips directory available for fallback parser.");
+        return false;
     }
 
     QDir dir(chipsDir);
@@ -290,7 +320,7 @@ bool StLinkConnector::loadDeviceParamsFallback()
             uint32_t p_option_base = 0;
             uint32_t p_option_size = 0;
             uint32_t p_flags = 0;
-            enum stm32_flash_type p_flash_type = STM32_FLASH_TYPE_UNKNOWN;
+            decltype(m_stlink->flash_type) p_flash_type = STM32_FLASH_TYPE_UNKNOWN;
 
             while (!in.atEnd())
             {

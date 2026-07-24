@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Sniffy
+Comment=Sniffy Interface for Nucleo Boards
+Exec=sniffy
+TryExec=sniffy
+Icon=sniffy
+Terminal=false
+Categories=Development;Electronics;Science;
+StartupNotify=true

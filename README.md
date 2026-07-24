@@ -27,7 +27,7 @@ Sniffy is a powerful software-defined instrument interface designed for STM32 Nu
 	```bash
 	sudo apt install ./sniffy-*-Linux.deb
 	```
-	*(Note: Using `apt` is recommended as it automatically resolves dependencies like `libusb` and `libstlink`).*
+	*(Note: Using `apt` is recommended as it automatically resolves dependencies like `Qt`, `libusb`, and `libstlink`).*
 
 #### Linux Permissions (udev rules)
 To access the ST-Link device without `sudo` privileges, you must ensure the correct udev rules are installed.
