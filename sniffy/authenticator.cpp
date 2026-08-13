@@ -8,6 +8,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QUuid>
+#include <QRegularExpression>
 
 #include "customsettings.h"
 
@@ -236,8 +237,17 @@ void Authenticator::onFinished(QNetworkReply *reply)
     
     // Check for error responses
     if (jsonObj.contains("error")) {
-        QString errorType = jsonObj["error"].toString();
-        qDebug() << "[Auth] Error response received:" << errorType;
+        const QString serverError = jsonObj["error"].toString().trimmed();
+        qDebug() << "[Auth] Error response received:" << serverError;
+
+        // Error codes are wrapped in a random salt by sniffy_auth_check.php,
+        // for example: AB-ERR-08-CD. Extract the stable ERR-xx code first.
+        const QRegularExpression errorCodePattern(QStringLiteral("(?:^|-)\\b(ERR-[0-9]{2})\\b(?:-|$)"),
+                               QRegularExpression::CaseInsensitiveOption);
+        const QRegularExpressionMatch errorCodeMatch = errorCodePattern.match(serverError);
+        const QString errorType = errorCodeMatch.hasMatch()
+            ? errorCodeMatch.captured(1).toUpper()
+            : serverError;
         
         // Special handling during polling - "pending" or "waiting" errors mean keep polling
         if (pollTimer->isActive() && (errorType == "pending" || errorType == "waiting" || errorType == "not_authenticated")) {
@@ -250,7 +260,13 @@ void Authenticator::onFinished(QNetworkReply *reply)
             stopPolling();
         }
         
-        if (errorType.compare("Expired", Qt::CaseInsensitive) == 0) {
+        if (errorType == "ERR-08") {
+            emit authenticationFailed(errorType, QObject::tr("Device limit exceeded. This account has reached its maximum number of registered devices."));
+            return;
+        } else if (errorType == "ERR-10") {
+            emit authenticationFailed(errorType, QObject::tr("Your authentication session has expired. Please log in again on www.sniffylab.com."));
+            return;
+        } else if (errorType.compare("Expired", Qt::CaseInsensitive) == 0) {
             qDebug() << "[Auth] Token expired detected";
             emit authenticationFailed("expired", QObject::tr("Token expired – login on www.sniffylab.com first"));
             return;
