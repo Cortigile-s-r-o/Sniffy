@@ -304,7 +304,13 @@ void FirmwareManager::onFirmwareDownloadFinished(QNetworkReply *reply)
 
         if (reply->error() != QNetworkReply::NoError)
         {
-            const QString errorText = reply->errorString();
+            // Server error responses carry the actual reason as plain text/JSON body,
+            // which reply->errorString() does not include - prefer that when present.
+            const QByteArray errorBody = reply->readAll();
+            const QString jsonError = extractJsonErrorMessage(errorBody);
+            const QString bodyText = QString::fromUtf8(errorBody).trimmed();
+            const QString errorText = !jsonError.isEmpty() ? jsonError
+                : (!bodyText.isEmpty() ? bodyText : reply->errorString());
             reply->deleteLater();
 
             if (hasCompatibleCachedFirmware)

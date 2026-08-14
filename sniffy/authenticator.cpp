@@ -263,7 +263,10 @@ void Authenticator::onFinished(QNetworkReply *reply)
         if (errorType == "ERR-08") {
             emit authenticationFailed(errorType, QObject::tr("Device limit exceeded. This account has reached its maximum number of registered devices."));
             return;
-        } else if (errorType == "ERR-10") {
+        } else if (errorType == "ERR-01") {
+            emit authenticationFailed(errorType, QObject::tr("Login failed. Don't you have a typo in your email?"));
+            return;}
+        else if (errorType == "ERR-10") {
             emit authenticationFailed(errorType, QObject::tr("Your authentication session has expired. Please log in again on www.sniffylab.com."));
             return;
         } else if (errorType.compare("Expired", Qt::CaseInsensitive) == 0) {
