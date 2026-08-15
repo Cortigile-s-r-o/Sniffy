@@ -358,7 +358,7 @@ if(WIN32)
     elseif(SNIFFY_REQUIRE_STLINK_DRIVERS)
         message(FATAL_ERROR "Required ST-Link Windows driver payload not found at: ${SNIFFY_STLINK_DRIVER_DIR}")
     else()
-        message(WARNING "ST-Link Windows driver payload not found at: ${SNIFFY_STLINK_DRIVER_DIR} (continuing without bundled drivers)")
+        message(STATUS "ST-Link Windows driver payload not found at: ${SNIFFY_STLINK_DRIVER_DIR} (continuing without bundled drivers)")
     endif()
     
     # 3. Use windeployqt to automatically copy Qt DLLs during packaging

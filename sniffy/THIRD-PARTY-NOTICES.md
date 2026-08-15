@@ -21,9 +21,10 @@ This distribution uses the unmodified upstream libusb library as a separate dyna
 ## stlink
 
 - **Bundled version**: 1.8.0
+- **Bundled ref**: `40948aa3de78778f51af02d795327ac20fa385d3` (`v1.8.0`)
 - **License**: BSD 3-Clause License
 - **Project**: https://github.com/stlink-org/stlink
-- **Source code**: https://github.com/stlink-org/stlink/tree/v1.8.0
+- **Source code**: https://github.com/stlink-org/stlink/tree/40948aa3de78778f51af02d795327ac20fa385d3
 - **Copyright**: Copyright (c) 2020, stlink-org
 - **Full license text**: [third-party-licenses/stlink-BSD-3-Clause.txt](third-party-licenses/stlink-BSD-3-Clause.txt)
 

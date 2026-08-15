@@ -153,12 +153,17 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential libgl1-mesa-dev libusb-1.0-0-dev ninja-build libcups2-dev libvulkan-dev
 
-      - name: Build ST-Link 1.8 (Linux)
+      - name: Build ST-Link (Linux)
         if: runner.os == 'Linux'
         shell: bash
+        env:
+          STLINK_GIT_REF: 40948aa3de78778f51af02d795327ac20fa385d3
         run: |
           set -euo pipefail
-          git clone --depth 1 --branch v1.8.0 https://github.com/stlink-org/stlink.git "$RUNNER_TEMP/stlink"
+          git init "$RUNNER_TEMP/stlink"
+          git -C "$RUNNER_TEMP/stlink" remote add origin https://github.com/stlink-org/stlink.git
+          git -C "$RUNNER_TEMP/stlink" fetch --depth 1 origin "$STLINK_GIT_REF"
+          git -C "$RUNNER_TEMP/stlink" checkout --detach FETCH_HEAD
           cmake -S "$RUNNER_TEMP/stlink" -B "$RUNNER_TEMP/stlink-build" -G Ninja -DCMAKE_BUILD_TYPE=Release
           cmake --build "$RUNNER_TEMP/stlink-build" --target stlink-static
           echo "SNIFFY_STLINK_LIBRARY=$RUNNER_TEMP/stlink-build/lib/libstlink.a" >> "$GITHUB_ENV"
@@ -172,7 +177,7 @@ jobs:
         run: choco install nsis
 
       # Explicitly find and set the Qt MinGW compiler on Windows
-      # to avoid picking up the broken system path C:/mingw64/bin/gcc.exe
+      # to avoid picking up a broken system-wide MinGW toolchain from PATH
       - name: Setup MinGW (Windows)
         if: runner.os == 'Windows'
         run: |

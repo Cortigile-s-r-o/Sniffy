@@ -1,19 +1,28 @@
-/* == nightwalker-87: TODO: CONTENT AND USE OF THIS SOURCE FILE IS TO BE VERIFIED (07.06.2023) == */
-
 /*
- * File: sg.h
+ * File: sg_legacy.h
  *
  *
  */
 
-#ifndef SG_H
-#define SG_H
+// TODO: CONTENT AND USE OF THIS SOURCE FILE IS TO BE VERIFIED
+// This file should be split up into new or existing modules
+
+#ifndef SG_LEGACY_H
+#define SG_LEGACY_H
 
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
 
 #include <stlink.h>
+#include <stlink_backend.h>
+#include <stlink_cmd.h>
+#include <stm32_register.h>
 
 #include "libusb_settings.h"
+
 
 /* Device access */
 #define RDWR        0
@@ -102,4 +111,4 @@ int32_t _stlink_sg_exit_debug_mode(stlink_t *stl);
 stlink_t* stlink_v1_open_inner(const int32_t verbose);
 stlink_t* stlink_v1_open(const int32_t verbose, int32_t reset);
 
-#endif // SG_H
+#endif // SG_LEGACY_H
