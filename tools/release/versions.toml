@@ -2,7 +2,7 @@
 # Developers update these values in their branch before merge.
 
 [desktop]
-version = "1.0.2"
+version = "1.0.3"
 
 [mcp]
 version = "1.0.0"

@@ -28,6 +28,16 @@ MANUAL_LAYOUT_CLASSES = {
     "manual-image--snippet",
     "manual-image--wide",
 }
+MANUAL_LOCALIZATION = {
+    "cs": {
+        "html_lang": "cs",
+        "header_title": "Uživatelský manuál",
+    },
+    "en": {
+        "html_lang": "en",
+        "header_title": "User Manual",
+    },
+}
 
 
 def parse_toc_depth(value: str) -> int:
@@ -57,6 +67,12 @@ def parse_args() -> argparse.Namespace:
         "--title",
         default="",
         help="Optional document title override.",
+    )
+    parser.add_argument(
+        "--language",
+        choices=sorted(MANUAL_LOCALIZATION),
+        default=None,
+        help="Optional manual language override. Defaults to inferring it from the input file name.",
     )
     parser.add_argument(
         "--asset-root",
@@ -111,6 +127,15 @@ def find_title(markdown_text: str, fallback: Path) -> str:
 
 def build_generated_at_label() -> str:
     return datetime.now().strftime("%d.%m.%y")
+
+
+def infer_manual_language(input_path: Path) -> str:
+    stem = input_path.stem.lower()
+    if stem.endswith("_en"):
+        return "en"
+    if stem.endswith("_cs"):
+        return "cs"
+    return "cs"
 
 
 def read_png_dimensions(asset_path: Path) -> tuple[int | None, int | None]:
@@ -342,20 +367,24 @@ def insert_table_of_contents(body_html: str, toc_html: str) -> str:
 
 
 def build_html_document(
-        title: str,
-        body_html: str,
-        css_text: str,
-        generated_at_label: str,
-        header_logo_uri: str,
+    title: str,
+    body_html: str,
+    css_text: str,
+    generated_at_label: str,
+    header_logo_uri: str,
+    html_lang: str,
+    header_title: str,
 ) -> str:
-        escaped_generated_at = html.escape(generated_at_label)
-        escaped_header_logo_uri = html.escape(header_logo_uri, quote=True)
-        return f"""<!DOCTYPE html>
-<html lang=\"cs\">
+    escaped_title = html.escape(title)
+    escaped_generated_at = html.escape(generated_at_label)
+    escaped_header_logo_uri = html.escape(header_logo_uri, quote=True)
+    escaped_header_title = html.escape(header_title)
+    return f"""<!DOCTYPE html>
+<html lang=\"{html_lang}\">
 <head>
     <meta charset=\"utf-8\" />
     <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
-    <title></title>
+    <title>{escaped_title}</title>
     <style>
 {css_text}
     </style>
@@ -364,7 +393,7 @@ def build_html_document(
     <header class=\"manual-page-header\" aria-hidden=\"true\">
         <div class=\"manual-page-header__row\">
             <img class=\"manual-page-header__logo\" src=\"{escaped_header_logo_uri}\" alt=\"\" />
-            <div class=\"manual-page-header__title\">Uživatelský manuál</div>
+            <div class=\"manual-page-header__title\">{escaped_header_title}</div>
         </div>
         <div class=\"manual-page-header__rule\"></div>
     </header>
@@ -418,6 +447,8 @@ def main() -> int:
 
     markdown_text = read_text(input_path)
     title = args.title.strip() or find_title(markdown_text, input_path)
+    language = args.language or infer_manual_language(input_path)
+    localization = MANUAL_LOCALIZATION[language]
     markdown_text = replace_math_expressions(markdown_text)
     asset_roots = normalize_roots(input_path, args.asset_root)
     generated_at_label = build_generated_at_label()
@@ -432,6 +463,8 @@ def main() -> int:
         read_text(css_path),
         generated_at_label,
         header_logo_uri,
+        localization["html_lang"],
+        localization["header_title"],
     )
 
     if args.html_output is not None:
