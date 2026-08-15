@@ -1,5 +1,18 @@
-#ifndef BACKEND_H
-#define BACKEND_H
+/**
+  ******************************************************************************
+  * @file           : stlink_backend.h
+  * @brief          : stlink backend
+  * @copyright      : Copyright (c) 2026 stlink-org. All rights reserved.
+  * @date           : 2026-07-27
+  * SPDX-License-Identifier: BSD-3-Clause
+  *
+  * This file is licensed under the BSD 3-Clause License.
+  * See the LICENSE file in the project root for full license information.
+  ******************************************************************************
+  */
+
+#ifndef STLINK_BACKEND_H
+#define STLINK_BACKEND_H
 
 #include <stdint.h>
 
@@ -34,6 +47,7 @@
         int32_t (*trace_enable) (stlink_t * sl, uint32_t frequency);
         int32_t (*trace_disable) (stlink_t * sl);
         int32_t (*trace_read) (stlink_t * sl, uint8_t* buf, uint32_t size);
+        int32_t (*init_ap) (stlink_t * sl, uint8_t ap); // select/initialise an access port (NULL if unsupported)
     } stlink_backend_t;
 
-#endif // BACKEND_H
+#endif // STLINK_BACKEND_H

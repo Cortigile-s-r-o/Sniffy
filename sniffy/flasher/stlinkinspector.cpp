@@ -185,12 +185,6 @@ void StLinkInspector::readUID(stlink_t* stlink)
     stlink_force_debug(stlink);
 
     // Select family-specific UID base from loaded device parameters.
-    // U5 chips expose their unique UID within the system memory area and are
-    // not covered by the older F/G family code paths.
-    // NOTE: this vendored libstlink (see THIRD-PARTY-NOTICES.md, v1.8.0) predates
-    // upstream's STM32C5 support, so stlink->flash_type only ever takes the values
-    // declared in libs/stlink/include/stm32.h below - it will never be C5, and F1/F0_F3
-    // are reported combined as F0_F1_F3, L5/U5/H5 combined as L5_U5_H5.
     uint32_t uidBase = 0;
     switch (stlink->flash_type)
     {
@@ -221,19 +215,19 @@ void StLinkInspector::readUID(stlink_t* stlink)
         uidBase = 0x1FF1E800u; // STM32H7x UID base
         break;
 
-    case STM32_FLASH_TYPE_L5_U5_H5:
-        // This vendored libstlink combines L5/U5/H5 into one flash_type, but H5 uses a
-        // different UID base than L5/U5, so disambiguate by chip_id (H503=0x474, H563/H573=0x484).
-        uidBase = (stlink->chip_id == 0x474 || stlink->chip_id == 0x484)
-                      ? 0x08FFF800u  // STM32H5 (H503/H563/H573) System UID base
-                      : 0x0BFA0700u; // STM32L5 / STM32U5x Secure UID base
+    case STM32_FLASH_TYPE_L5_U5:
+        uidBase = 0x0BFA0700u; // STM32L5 / STM32U5x Secure UID base
+        break;
+
+    case STM32_FLASH_TYPE_H5:
+        uidBase = 0x08FFF800u; // STM32H5 System UID base
+        break;
+
+    case STM32_FLASH_TYPE_C5:
+        uidBase = 0x08FFF800u; // STM32C5 secure information area layout matches H5 here
         break;
 
     default:
-        // Also covers STM32C562RE (chip_id 0x44E): this old libstlink build does not
-        // know its flash_type, so it always falls through here. Requires rebuilding
-        // libstlink from an upstream version with STM32C5 support to fix properly
-        // (see stlink-org/stlink PR #1505).
         emit deviceUIDError("Unsupported MCU family for UID read");
         return;
     }

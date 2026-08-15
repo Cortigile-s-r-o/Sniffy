@@ -167,7 +167,7 @@ python -m sniffy_mcp call voltmeter_set_averaging Voltmeter 16
 python -m sniffy_mcp call voltmeter_set_calc_mode Voltmeter 0        # 0=Min/Max 1=Ripple 2=None
 python -m sniffy_mcp call voltmeter_set_channels Voltmeter 3         # bitmask: CH1+CH2
 python -m sniffy_mcp call voltmeter_get_readings Voltmeter
-python -m sniffy_mcp call voltmeter_set_datalog_file Voltmeter "C:\data\log.txt"
+python -m sniffy_mcp call voltmeter_set_datalog_file Voltmeter ".\\logs\\voltmeter.log"
 python -m sniffy_mcp call voltmeter_start_datalog Voltmeter
 python -m sniffy_mcp call voltmeter_stop_datalog Voltmeter
 
@@ -213,7 +213,7 @@ with SniffyClient() as s:
     s.voltmeter_set_channels("Voltmeter", 3)    # CH1+CH2
     print(s.voltmeter_get_readings("Voltmeter"))
     # Data logging — create the file first if it doesn't exist
-    s.voltmeter_set_datalog_file("Voltmeter", "C:\\data\\log.txt")
+    s.voltmeter_set_datalog_file("Voltmeter", ".\\logs\\voltmeter.log")
     s.voltmeter_start_datalog("Voltmeter")
     import time; time.sleep(5)                   # collect 5 seconds of data
     s.voltmeter_stop_datalog("Voltmeter")

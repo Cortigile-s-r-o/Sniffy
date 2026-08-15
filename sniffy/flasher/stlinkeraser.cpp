@@ -97,6 +97,26 @@ void StLinkEraser::massErase(stlink_t* stlink)
             }
             break;
         }
+        case STM32_FLASH_TYPE_L5_U5:
+        {
+            if (stlink_read_option_bytes32(stlink, &ob) == 0)
+            {
+                info.valid = true;
+                info.rdp = static_cast<uint8_t>(ob & 0xFF);
+                info.level0 = 0xAA;
+            }
+            break;
+        }
+        case STM32_FLASH_TYPE_C5:
+        {
+            if (stlink_read_debug32(stlink, STM32_FLASH_C5_OPTSR_CUR, &ob) == 0)
+            {
+                info.valid = true;
+                info.rdp = static_cast<uint8_t>(ob & 0xFF);
+                info.level0 = 0xAA;
+            }
+            break;
+        }
         default:
             // Unknown/unsupported: treat as not valid, do mass erase
             break;
@@ -152,6 +172,14 @@ void StLinkEraser::massErase(stlink_t* stlink)
             res = stlink_write_option_bytes(stlink, stlink->option_base, &rdp_val, 1);
             break;
         }
+        case STM32_FLASH_TYPE_L5_U5:
+        {
+            uint32_t optr = rawOption;
+            optr &= ~0xFFu;
+            optr |= level0;
+            res = stlink_write_option_bytes32(stlink, optr);
+            break;
+        }
         default:
             return false;
         }
@@ -190,7 +218,11 @@ void StLinkEraser::massErase(stlink_t* stlink)
             stlink_read_option_control_register_gx(stlink, &rawOptionBytes);
             break;
         case STM32_FLASH_TYPE_F0_F1_F3:
+        case STM32_FLASH_TYPE_L5_U5:
             stlink_read_option_bytes32(stlink, &rawOptionBytes);
+            break;
+        case STM32_FLASH_TYPE_C5:
+            stlink_read_debug32(stlink, STM32_FLASH_C5_OPTSR_CUR, &rawOptionBytes);
             break;
         default:
             break;
@@ -204,6 +236,12 @@ void StLinkEraser::massErase(stlink_t* stlink)
     // Execute
     if (needsRegression)
     {
+        if (stlink->flash_type == STM32_FLASH_TYPE_C5)
+        {
+            emit operationFinished(false, "C5 RDP regression is not implemented in the current ST-Link helper set.");
+            return;
+        }
+
         emit logMessage("Performing RDP regression...");
         const bool ok = performRdpRegression(rawOptionBytes, rdp.level0);
         if (ok)

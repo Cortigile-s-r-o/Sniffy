@@ -1,20 +1,25 @@
-/*
- * File: libusb_settings.h
- *
- * Settings for libusb library
- */
+/**
+  ******************************************************************************
+  * @file           : libusb_settings.h
+  * @brief          : Settings for libusb library
+  * @copyright      : Copyright (c) 2026 stlink-org. All rights reserved.
+  * @date           : 2026-07-27
+  * SPDX-License-Identifier: BSD-3-Clause
+  *
+  * This file is licensed under the BSD 3-Clause License.
+  * See the LICENSE file in the project root for full license information.
+  ******************************************************************************
+  */
 
 #ifndef LIBUSB_SETTINGS_H
 #define LIBUSB_SETTINGS_H
 
 #include <libusb.h>
 
+
 /*
  *  libusb ver | LIBUSB_API_VERSION
  *  -----------+--------------------
- *  v1.0.13    | 0x01000100
- *  v1.0.14    | 0x010000FF
- *  v1.0.15    | 0x01000101
  *  v1.0.16    | 0x01000102
  *  v1.0.17    | 0x01000102
  *  v1.0.18    | 0x01000102
@@ -26,6 +31,11 @@
  *  v1.0.24    | 0x01000108
  *  v1.0.25    | 0x01000109
  *  v1.0.26    | 0x01000110
+ *  v1.0.27    | 0x01000111
+ *  v1.0.28    | 0x01000112
+ *  v1.0.29    | 0x01000113
+ *  v1.0.30    | 0x01000114
+ *  v1.0.31    | 0x01000115
  */
 
 #if defined (__FreeBSD__)
@@ -38,15 +48,11 @@
 
 #if defined (__FreeBSD__)
     #define MINIMAL_API_VERSION 0x01000102 // v1.0.16
-#elif defined (__OpenBSD__)
-    #define MINIMAL_API_VERSION 0x01000106 // v1.0.22
-#elif defined (__linux__)
-    #define MINIMAL_API_VERSION 0x01000106 // v1.0.22
-#elif defined (_WIN32)
-    #define MINIMAL_API_VERSION 0x01000109 // v1.0.25
+#else // OpenBSD, Linux, WIN32, macOS
+    #define MINIMAL_API_VERSION 0x01000108 // v1.0.24
 #endif
 
-#if (LIBUSB_API_VERSION < MINIMAL_API_VERSION)
+#if(LIBUSB_API_VERSION < MINIMAL_API_VERSION)
     #error unsupported libusb version
 #endif
 

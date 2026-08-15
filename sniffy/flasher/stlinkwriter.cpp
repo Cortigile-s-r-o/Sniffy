@@ -101,7 +101,8 @@ void StLinkWriter::flash(stlink_t* stlink, const QString &filePath)
                                        flash_base,
                                        reinterpret_cast<uint8_t *>(writeBuffer.data()),
                                        size,
-                                       0);
+                                       0,
+                                       NO_ERASE);
 
     if (res != 0)
     {

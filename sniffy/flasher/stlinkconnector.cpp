@@ -313,6 +313,7 @@ bool StLinkConnector::loadDeviceParamsFallback()
             uint32_t fileChipId = 0;
 
             // Simple parser variables
+            uint32_t p_flash_size_reg = 0;
             uint32_t p_flash_pagesize = 0;
             uint32_t p_sram_size = 0;
             uint32_t p_bootrom_base = 0;
@@ -344,6 +345,10 @@ bool StLinkConnector::loadDeviceParamsFallback()
                 if (key == "chip_id")
                 {
                     fileChipId = value.toUInt(&ok, 0); // Auto-detect base (hex 0x...)
+                }
+                else if (key == "flash_size_reg")
+                {
+                    p_flash_size_reg = value.toUInt(&ok, 0);
                 }
                 else if (key == "flash_pagesize")
                 {
@@ -389,12 +394,20 @@ bool StLinkConnector::loadDeviceParamsFallback()
                         p_flash_type = STM32_FLASH_TYPE_L0_L1;
                     else if (value == "L4")
                         p_flash_type = STM32_FLASH_TYPE_L4;
+                    else if (value == "L5_U5")
+                        p_flash_type = STM32_FLASH_TYPE_L5_U5;
                     else if (value == "L5_U5_H5")
-                        p_flash_type = STM32_FLASH_TYPE_L5_U5_H5;
+                        p_flash_type = STM32_FLASH_TYPE_L5_U5;
                     else if (value == "WB_WL")
                         p_flash_type = STM32_FLASH_TYPE_WB_WL;
+                    else if (value == "WB0")
+                        p_flash_type = STM32_FLASH_TYPE_WB0;
+                    else if (value == "H5")
+                        p_flash_type = STM32_FLASH_TYPE_H5;
                     else if (value == "C0")
                         p_flash_type = STM32_FLASH_TYPE_C0;
+                    else if (value == "C5")
+                        p_flash_type = STM32_FLASH_TYPE_C5;
                 }
             }
 
@@ -411,20 +424,12 @@ bool StLinkConnector::loadDeviceParamsFallback()
                 m_stlink->flash_type = p_flash_type;
                 m_stlink->chip_flags = p_flags;
 
-                // Flash size is usually read from a register, but we can try to set a default
-                // or let the library handle it if it can read the register now that it has params.
-                // For F303RE, flash size register is at 0x1ffff7cc.
-                // We can try to read it.
                 uint32_t flash_size_kb = 0;
-                // F3 specific register for flash size
-                if (p_flash_type == STM32_FLASH_TYPE_F0_F1_F3)
+                if (p_flash_size_reg != 0)
                 {
-                    // Try to read from standard address for F0/F1/F3
-                    // 0x1FFFF7CC is common for F3
-                    uint32_t val;
-                    if (!stlink_read_mem32(m_stlink, 0x1ffff7cc, 4))
+                    if (!stlink_read_mem32(m_stlink, p_flash_size_reg, 4))
                     {
-                        val = *(uint32_t *)m_stlink->q_buf;
+                        const uint32_t val = *(uint32_t *)m_stlink->q_buf;
                         flash_size_kb = val & 0xFFFF;
                     }
                 }
@@ -435,11 +440,8 @@ bool StLinkConnector::loadDeviceParamsFallback()
                 }
                 else
                 {
-                    // Fallback if read fails: 512KB (common for F303RE)
-                    // Or we could parse 'flash_size_reg' from file and read it.
-                    // For now, let's assume 512KB if we can't read it, or 64KB min.
-                    m_stlink->flash_size = 512 * 1024;
-                    emit logMessage("Warning: Could not read flash size, defaulting to 512KB");
+                    emit logMessage(QString("Failed to read flash size from chip definition register 0x%1.").arg(p_flash_size_reg, 0, 16));
+                    return false;
                 }
 
                 m_stlink->flash_base = 0x08000000; // Standard base

@@ -1,3 +1,10 @@
+/*
+ * File: logging_spdlog_wr.h
+ *
+ * spdlog: Very fast, header-only/compiled, C++ logging library.
+ * This is a wrapper file for spdlog.
+ */
+
 #ifndef _SPDLOG_WRAPPER_
 #define _SPDLOG_WRAPPER_
 
