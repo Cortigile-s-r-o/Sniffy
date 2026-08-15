@@ -261,10 +261,10 @@ jobs:
         manual:
           - language: cs
             source: sniffy/docs/USER_MANUAL_cs.md
-            release_file_prefix: sniffy-user-manual-cs
+            public_file: sniffy-user-manual-cs.pdf
           - language: en
             source: sniffy/docs/USER_MANUAL_en.md
-            release_file_prefix: sniffy-user-manual-en
+            public_file: sniffy-user-manual-en.pdf
 
     steps:
       - name: Checkout repository
@@ -294,14 +294,14 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r tools/manuals/requirements.txt
 
-      - name: Build versioned manual PDF
+      - name: Build manual PDF
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p manual_artifacts
           python tools/manuals/build_manual.py \
             --input "${{ matrix.manual.source }}" \
-            --output "manual_artifacts/${{ matrix.manual.release_file_prefix }}-desktop-v${{ needs.release_plan.outputs.desktop_version }}.pdf" \
+            --output "manual_artifacts/${{ matrix.manual.public_file }}" \
             --asset-root "$MANUAL_ASSET_ROOT"
 
       - name: Upload manual artifact
