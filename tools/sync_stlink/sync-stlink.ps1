@@ -3,7 +3,7 @@ param(
     [string]$RepoUrl = "https://github.com/stlink-org/stlink.git",
     [string]$SourceRepoPath,
     [string]$Ref,
-    [string]$DestinationRoot = (Join-Path $PSScriptRoot "..\..\libs\stlink"),
+    [string]$DestinationRoot = (Join-Path $PSScriptRoot "..\..\sniffy\libs\stlink"),
     [string]$WorkRoot = (Join-Path ([System.IO.Path]::GetTempPath()) "sniffy-stlink-sync"),
     [string]$ArtifactRoot,
     [switch]$SkipHeaders,
@@ -313,4 +313,4 @@ if (-not $KeepWorktree -and -not $SourceRepoPath) {
 
 Write-Step "Sync complete"
 Write-Host ""
-Write-Host "Next step: review the follow-up notes in sniffy/tools/sync_stlink/README.md before relying on the new vendor bundle at runtime."
+Write-Host "Next step: review the follow-up notes in tools/sync_stlink/README.md before relying on the new vendor bundle at runtime."

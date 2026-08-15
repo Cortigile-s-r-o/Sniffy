@@ -12,7 +12,7 @@ Assert-ToolAvailable -ToolName "python"
 $repoRoot = Get-ReleaseRepoRoot
 $version = Get-ReleaseVersion -Component "mcp"
 $tag = Get-ReleaseTag -Component "mcp"
-$mcpProjectDir = Join-Path $repoRoot "sniffy/tools/sniffy_mcp"
+$mcpProjectDir = Join-Path $repoRoot "packages/sniffy_mcp"
 
 Push-Location $repoRoot
 try {
@@ -21,7 +21,7 @@ try {
     Fetch-RemoteTags -Remote $Remote
     Assert-TagMissing -Tag $tag -Remote $Remote
 
-    Invoke-CheckedCommand -FilePath "python" -Arguments @("sniffy/tools/sniffy_mcp/release_metadata.py", "validate", "--expected-tag", $tag) -WorkingDirectory $repoRoot
+    Invoke-CheckedCommand -FilePath "python" -Arguments @("packages/sniffy_mcp/release_metadata.py", "validate", "--expected-tag", $tag) -WorkingDirectory $repoRoot
 
     if (-not $SkipBuildCheck) {
         $scratchRoot = Get-ReleaseScratchRoot

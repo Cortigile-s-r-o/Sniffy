@@ -27,8 +27,8 @@ every change in real time.
 | Component | Path | Language |
 |-----------|------|----------|
 | Bridge server | `sniffy/agentbridge/` | C++ / Qt |
-| Python client + MCP server | `tools/sniffy_mcp/` | Python 3.10+ |
-| Agent instructions | `tools/sniffy_mcp/AGENT_INSTRUCTIONS.md` | Markdown |
+| Python client + MCP server | `packages/sniffy_mcp/` | Python 3.10+ |
+| Agent instructions | `packages/sniffy_mcp/AGENT_INSTRUCTIONS.md` | Markdown |
 
 ## Quick Start
 
@@ -40,7 +40,7 @@ Look for `[AgentBridge] Listening on ...` in the debug output.
 ### 2. Install the Python client
 
 ```bash
-cd tools/sniffy_mcp
+cd packages/sniffy_mcp
 pip install -e .            # core client (no dependencies)
 pip install -e ".[mcp]"     # with MCP server support
 ```

@@ -6,14 +6,14 @@ Sniffy vendors only a runtime subset of upstream `stlink` under `sniffy/libs/stl
 - `config/chips`
 - prebuilt Windows artifacts in `bin/` and `lib/`
 
-The sync entrypoint is `sniffy/tools/sync_stlink/sync-stlink.ps1`.
+The sync entrypoint is `tools/sync_stlink/sync-stlink.ps1`.
 
 ## Typical usage
 
 Preview a source-derived sync:
 
 ```powershell
-pwsh -File .\sniffy\tools\sync_stlink\sync-stlink.ps1 \
+pwsh -File .\tools\sync_stlink\sync-stlink.ps1 \
   -SourceRepoPath ..\third_party\stlink-upstream \
   -SkipBinaries \
   -WhatIf
@@ -22,7 +22,7 @@ pwsh -File .\sniffy\tools\sync_stlink\sync-stlink.ps1 \
 Apply a full sync including prebuilt Windows artifacts:
 
 ```powershell
-pwsh -File .\sniffy\tools\sync_stlink\sync-stlink.ps1 \
+pwsh -File .\tools\sync_stlink\sync-stlink.ps1 \
   -SourceRepoPath ..\third_party\stlink-upstream \
   -ArtifactRoot ..\third_party\stlink-build
 ```
