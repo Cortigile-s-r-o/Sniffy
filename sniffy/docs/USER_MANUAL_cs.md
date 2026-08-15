@@ -1180,7 +1180,7 @@ pip install "sniffy-mcp[mcp] @ $($meta.wheel_url)"
 #### Lokální vývojová instalace
 
 ```bash
-cd sniffy/tools/sniffy_mcp
+cd packages/sniffy_mcp
 pip install -e .
 pip install -e ".[mcp]"
 ```
@@ -1208,7 +1208,7 @@ pip install -e ".[mcp]"
 Pro úplný přehled metod a CLI příkladů použijte přibalené dokumentace:
 
 - [agentbridge/README.md](../agentbridge/README.md)
-- [tools/sniffy_mcp/README.md](../tools/sniffy_mcp/README.md)
+- [packages/sniffy_mcp/README.md](../../packages/sniffy_mcp/README.md)
 
 ## 21. Doporučený první pracovní scénář
 

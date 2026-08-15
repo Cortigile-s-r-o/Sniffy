@@ -29,7 +29,7 @@ pip install "sniffy-mcp[mcp] @ $($meta.wheel_url)"
 For local development or source checkouts:
 
 ```bash
-cd sniffy/tools/sniffy_mcp
+cd packages/sniffy_mcp
 
 pip install -e .             # client only (zero dependencies)
 pip install -e ".[mcp]"      # with MCP server (needs 'mcp' package)
@@ -44,7 +44,7 @@ expose bridge metadata yet.
 
 ## Release Flow
 
-- App release (`desktop-v*`) checks whether anything under `sniffy/tools/sniffy_mcp/`
+- App release (`desktop-v*`) checks whether anything under `packages/sniffy_mcp/`
     changed since the last `mcp-v*` release.
 - If nothing changed, the app release skips MCP packaging entirely.
 - If MCP changed, the app release builds MCP, publishes a new standalone
@@ -62,13 +62,13 @@ check guards older desktop app versions at runtime.
 
 ## Usage — Quick CLI
 
-> **Important**: Run from the `sniffy/tools/sniffy_mcp/` directory,
+> **Important**: Run from the `packages/sniffy_mcp/` directory,
 > which now contains the standard `sniffy_mcp/` Python package subfolder.
 
 Call any `SniffyClient` method from the command line (no MCP package needed):
 
 ```bash
-cd sniffy/tools/sniffy_mcp
+cd packages/sniffy_mcp
 
 # ── Core / Status ──────────────────────────────────────────────
 python -m sniffy_mcp call ping

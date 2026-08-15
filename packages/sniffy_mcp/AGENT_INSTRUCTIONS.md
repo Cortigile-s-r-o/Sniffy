@@ -13,14 +13,14 @@ in the GUI so the user can observe in real time.
 
 ## Setup & Running the CLI
 
-The automation package lives at `sniffy/tools/sniffy_mcp/`.
+The automation package lives at `packages/sniffy_mcp/`.
 
-> **Critical**: The CLI must be invoked from the `sniffy/tools/sniffy_mcp/`
+> **Critical**: The CLI must be invoked from the `packages/sniffy_mcp/`
 > directory. That directory is now the package root and contains the
 > `sniffy_mcp/` Python package subfolder.
 
 ```bash
-cd sniffy/tools/sniffy_mcp
+cd packages/sniffy_mcp
 python -m sniffy_mcp call <method> [args...]
 ```
 
@@ -66,7 +66,7 @@ with SniffyClient() as s:
 ### MCP server (for MCP-compatible hosts)
 
 ```bash
-cd sniffy/tools/sniffy_mcp
+cd packages/sniffy_mcp
 pip install -e ".[mcp]"
 python -m sniffy_mcp          # starts MCP stdio server
 ```

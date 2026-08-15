@@ -83,7 +83,7 @@ jobs:
 
       - name: Validate MCP release metadata
         shell: bash
-        working-directory: sniffy/tools/sniffy_mcp
+        working-directory: packages/sniffy_mcp
         run: python release_metadata.py validate --expected-tag "${{ steps.versions.outputs.mcp_tag }}"
 
       - name: Detect MCP changes since last MCP release
@@ -96,7 +96,7 @@ jobs:
           LAST_TAG=$(git tag --list 'mcp-v*' --sort=-creatordate | head -n 1 || true)
           if [ -z "$LAST_TAG" ]; then
             CHANGED=true
-          elif git diff --quiet "$LAST_TAG"..HEAD -- sniffy/tools/sniffy_mcp; then
+          elif git diff --quiet "$LAST_TAG"..HEAD -- packages/sniffy_mcp; then
             CHANGED=false
           else
             CHANGED=true
@@ -357,7 +357,7 @@ jobs:
     if: needs.release_plan.outputs.changed == 'true'
     defaults:
       run:
-        working-directory: sniffy/tools/sniffy_mcp
+        working-directory: packages/sniffy_mcp
 
     steps:
       - name: Checkout repository
@@ -406,7 +406,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: sniffy-mcp-dist
-          path: sniffy/tools/sniffy_mcp/dist/*
+          path: packages/sniffy_mcp/dist/*
 
   mcp_publish:
     name: Publish MCP with app release
