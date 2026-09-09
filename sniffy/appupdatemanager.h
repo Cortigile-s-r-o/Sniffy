@@ -40,7 +40,7 @@ public slots:
 
 signals:
     void updateAvailabilityChanged(bool available, const QString &version);
-    void bannerActionStateChanged(const QString &text, bool enabled);
+    void updateActionStateChanged(const QString &text, bool enabled);
     void updateStatusTextChanged(const QString &text);
     void popupMessageRequested(const QString &text);
     void quitRequested();

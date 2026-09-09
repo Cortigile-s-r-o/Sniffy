@@ -140,7 +140,7 @@ void AppUpdateManager::installAvailableUpdate()
     connect(m_downloadReply, &QNetworkReply::downloadProgress, this, &AppUpdateManager::onDownloadProgress);
 
     m_installInProgress = true;
-    emit bannerActionStateChanged(QStringLiteral("Downloading..."), false);
+    emit updateActionStateChanged(QStringLiteral("Downloading..."), false);
     emit updateStatusTextChanged(QStringLiteral("Downloading update %1...").arg(m_availableRelease.version));
 }
 
@@ -284,7 +284,7 @@ void AppUpdateManager::handleMetadataReply(QNetworkReply *reply, const QByteArra
         m_availableRelease = latestRelease;
         m_updateAvailable = true;
         emit updateAvailabilityChanged(true, latestRelease.version);
-        emit bannerActionStateChanged(QStringLiteral("Install and relaunch"), true);
+        emit updateActionStateChanged(QStringLiteral("Install and relaunch"), true);
         emit updateStatusTextChanged(QStringLiteral("Update available: %1").arg(latestRelease.version));
         if (manual) {
             emit popupMessageRequested(QStringLiteral("A newer desktop version is available: %1").arg(latestRelease.version));
@@ -297,7 +297,7 @@ void AppUpdateManager::handleMetadataReply(QNetworkReply *reply, const QByteArra
         m_updateAvailable = false;
         emit updateAvailabilityChanged(false, QString());
     }
-    emit bannerActionStateChanged(QStringLiteral("Install and relaunch"), true);
+    emit updateActionStateChanged(QStringLiteral("Install and relaunch"), true);
     emit updateStatusTextChanged(QStringLiteral("Up to date (%1)").arg(currentVersion()));
     if (manual) {
         emit popupMessageRequested(QStringLiteral("You are using the latest desktop version."));
@@ -350,7 +350,7 @@ void AppUpdateManager::handleDownloadReply(QNetworkReply *reply)
 void AppUpdateManager::failInstall(const QString &message)
 {
     clearDownloadState();
-    emit bannerActionStateChanged(QStringLiteral("Install and relaunch"), true);
+    emit updateActionStateChanged(QStringLiteral("Install and relaunch"), true);
     emit updateStatusTextChanged(QStringLiteral("Update available: %1").arg(m_availableRelease.version));
     emit popupMessageRequested(message);
 }

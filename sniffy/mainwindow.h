@@ -10,7 +10,6 @@
 #include <QFileDialog>
 #include <QSettings>
 #include <QTimer>
-#include <QToolBar>
 
 #include "devicemediator.h"
 #include "settingsdialog.h"
@@ -22,7 +21,7 @@
 
 class ToastWidget; // Forward declaration
 class AppUpdateManager;
-class UpdateBannerWidget;
+class QPushButton;
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -57,10 +56,7 @@ private:
     WidgetFooter *footer;
     WidgetLoginInfo *loginInfo;
     QJsonObject sessionRestoreData;
-    QToolBar *updateBannerToolBar = nullptr;
-    QWidget *updateBannerContainer = nullptr;
-    QWidget *updateBannerSpacer = nullptr;
-    UpdateBannerWidget *updateBanner = nullptr;
+    QPushButton *updateButton = nullptr;
 
 
     void setMenuNarrow();
@@ -74,8 +70,6 @@ private:
     static constexpr int LeftMenuWideWidth   = 250;  // expanded
 
     void setupMainWindowComponents();
-    void setupUpdateBanner();
-    void syncUpdateBannerLayout();
     void createModulesWidgets();
 
     void saveSessionToFile(const QString &filePath, bool silent);
