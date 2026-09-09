@@ -14,8 +14,12 @@ Right - area for dock widgets
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include "appupdatemanager.h"
+
 #include "GUI/widgetcontrolmodule.h"
 #include "GUI/widgetbuttons.h"
+#include "GUI/updatebannerwidget.h"
+#include <QHBoxLayout>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QStandardPaths>
@@ -69,6 +73,39 @@ MainWindow::MainWindow(QWidget *parent):
 
     createModulesWidgets();
     setupMainWindowComponents();
+    setupUpdateBanner();
+
+    appUpdateManager = new AppUpdateManager(this);
+    connect(sett, &SettingsDialog::checkForUpdatesRequested, this, [this]() {
+        if (appUpdateManager != nullptr) {
+            appUpdateManager->checkForUpdates(true);
+        }
+    });
+    connect(appUpdateManager, &AppUpdateManager::popupMessageRequested, this, &MainWindow::showBottomLeftPopup);
+    connect(appUpdateManager, &AppUpdateManager::updateStatusTextChanged, sett, &SettingsDialog::setUpdateStatusText);
+    connect(appUpdateManager, &AppUpdateManager::bannerActionStateChanged, this, [this](const QString &text, bool enabled) {
+        if (updateBanner != nullptr) {
+            updateBanner->setActionState(text, enabled);
+        }
+    });
+    connect(appUpdateManager, &AppUpdateManager::updateAvailabilityChanged, this, [this](bool available, const QString &version) {
+        Q_UNUSED(version);
+        if (updateBanner == nullptr || updateBannerToolBar == nullptr) {
+            return;
+        }
+
+        if (available) {
+            updateBanner->setMessage(QStringLiteral("New update available"));
+            updateBanner->show();
+            updateBannerToolBar->show();
+            syncUpdateBannerLayout();
+        } else {
+            updateBannerToolBar->hide();
+            updateBanner->hide();
+        }
+    });
+    connect(appUpdateManager, &AppUpdateManager::quitRequested, this, &MainWindow::handleUpdateQuitRequested);
+    connect(updateBanner, &UpdateBannerWidget::actionClicked, appUpdateManager, &AppUpdateManager::installAvailableUpdate);
 
     connect(sett, &SettingsDialog::firmwareFlashed, deviceMediator, &DeviceMediator::onFirmwareFlashed);
     connect(sett, &SettingsDialog::massEraseRequested, deviceMediator, &DeviceMediator::onMassEraseRequested);
@@ -83,6 +120,12 @@ MainWindow::MainWindow(QWidget *parent):
     // Start the IPC bridge for external AI agent connections
     agentBridge = new AgentBridge(deviceMediator, this);
     agentBridge->start();
+
+    QTimer::singleShot(1500, this, [this]() {
+        if (appUpdateManager != nullptr) {
+            appUpdateManager->checkForUpdates(false);
+        }
+    });
 }
 
 void MainWindow::restoreInitialGeometryFromNewestSession()
@@ -258,6 +301,50 @@ void MainWindow::setupMainWindowComponents(){
     //    animation->setEndValue(QSize(90, ui->centralwidget->height()));
 }
 
+void MainWindow::setupUpdateBanner()
+{
+    updateBannerToolBar = new QToolBar(this);
+    updateBannerToolBar->setObjectName(QStringLiteral("updateBannerToolBar"));
+    updateBannerToolBar->setMovable(false);
+    updateBannerToolBar->setFloatable(false);
+    updateBannerToolBar->setAllowedAreas(Qt::TopToolBarArea);
+    updateBannerToolBar->setStyleSheet(QStringLiteral(
+        "QToolBar#updateBannerToolBar { border: none; background: transparent; spacing: 0px; padding: 0px; }"
+    ));
+
+    updateBannerContainer = new QWidget(updateBannerToolBar);
+    updateBannerContainer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+
+    auto *layout = new QHBoxLayout(updateBannerContainer);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(0);
+
+    updateBannerSpacer = new QWidget(updateBannerContainer);
+    updateBannerSpacer->setFixedWidth(ui->centralwidget != nullptr ? ui->centralwidget->width() : LeftMenuWideWidth);
+    updateBannerSpacer->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+
+    updateBanner = new UpdateBannerWidget(updateBannerContainer);
+    updateBanner->hide();
+
+    layout->addWidget(updateBannerSpacer, 0);
+    layout->addWidget(updateBanner, 1);
+
+    addToolBar(Qt::TopToolBarArea, updateBannerToolBar);
+    updateBannerToolBar->addWidget(updateBannerContainer);
+    updateBannerToolBar->hide();
+}
+
+void MainWindow::syncUpdateBannerLayout()
+{
+    if (updateBannerSpacer != nullptr && ui != nullptr && ui->centralwidget != nullptr) {
+        updateBannerSpacer->setFixedWidth(ui->centralwidget->width());
+    }
+
+    if (updateBannerContainer != nullptr) {
+        updateBannerContainer->setMinimumWidth(width());
+    }
+}
+
 void MainWindow::setMenuSize(bool isWide){
     if(isWide){
         setMenuWide();
@@ -287,6 +374,11 @@ void MainWindow::onLoginInfoChanged()
 void MainWindow::openSettingDialog()
 {
     sett->open();
+}
+
+void MainWindow::handleUpdateQuitRequested()
+{
+    close();
 }
 
 void MainWindow::showBottomLeftPopup(const QString &text)
@@ -347,6 +439,7 @@ void MainWindow::setMenuWide(){
     updateLeftMenuCompact(false);
     if (loginInfo) loginInfo->setCompact(false);
     enforceLeftMenuWidth();
+    syncUpdateBannerLayout();
 }
 
 void MainWindow::recoverLeftMenu(bool isWide)
@@ -364,6 +457,7 @@ void MainWindow::setMenuNarrow(){
     updateLeftMenuCompact(true);
     if (loginInfo) loginInfo->setCompact(true);
     enforceLeftMenuWidth();
+    syncUpdateBannerLayout();
 }
 
 MainWindow::~MainWindow()
@@ -402,6 +496,7 @@ void MainWindow::enforceLeftMenuWidth()
         // Keep horizontal policy fixed to prevent auto-resize
         ui->centralwidget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
     }
+    syncUpdateBannerLayout();
 }
 
 /** The “soon” version defers the width lock to the next event loop tick so it runs
@@ -420,6 +515,7 @@ void MainWindow::resizeEvent(QResizeEvent *event)
 {
     QMainWindow::resizeEvent(event);
     enforceLeftMenuWidth();
+    syncUpdateBannerLayout();
     repositionToasts();
 }
 

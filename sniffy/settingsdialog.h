@@ -42,12 +42,14 @@ private:
     WidgetButtons *buttonsFlash;
     WidgetButtons *buttonsErase;
     WidgetButtons *buttonsLicenses;
+    WidgetButtons *buttonsCheckUpdates;
     SimpleHProgressBar *flashProgressBar;
     QPlainTextEdit *flashLogWindow;
     
     FirmwareManager *m_firmwareManager;
 
     WidgetLabel *infoLabel;
+    WidgetLabel *labelUpdateStatus;
     WidgetButtons *buttonsDone;
 
     bool restartNeededWarning = false;
@@ -55,6 +57,7 @@ private:
 public slots:
     void closeDialog(int isCanceled);
     void onUserLoginChanged();
+    void setUpdateStatusText(const QString &text);
 
 private:
     enum class FirmwareUiOperation {
@@ -84,6 +87,7 @@ private slots:
 signals:
     void saveSessionRequested();
     void loadSessionRequested();
+    void checkForUpdatesRequested();
     void firmwareFlashed();
     void massEraseRequested();
     void massEraseCompleted();
