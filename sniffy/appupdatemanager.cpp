@@ -107,9 +107,9 @@ void AppUpdateManager::installAvailableUpdate()
         return;
     }
 
-    const QString sourceUrl = !m_availableRelease.preferredAssetDirectUrl.isEmpty()
-        ? m_availableRelease.preferredAssetDirectUrl
-        : m_availableRelease.preferredAssetDownloadUrl;
+    const QString sourceUrl = !m_availableRelease.preferredAssetDownloadUrl.isEmpty()
+        ? m_availableRelease.preferredAssetDownloadUrl
+        : m_availableRelease.preferredAssetDirectUrl;
     if (sourceUrl.isEmpty()) {
         emit popupMessageRequested(QStringLiteral("The selected update does not expose a downloadable asset."));
         return;
@@ -405,6 +405,22 @@ QString AppUpdateManager::targetDownloadPath(const ReleaseInfo &release) const
     return QDir(directory).filePath(safeFileStem(assetName));
 }
 
+QString AppUpdateManager::installedExecutablePath() const
+{
+    return QDir::toNativeSeparators(QCoreApplication::applicationFilePath());
+}
+
+QString AppUpdateManager::installedRootPath() const
+{
+    const QFileInfo appInfo(QCoreApplication::applicationFilePath());
+    QDir appDir = appInfo.dir();
+    if (appDir.dirName().compare(QStringLiteral("bin"), Qt::CaseInsensitive) == 0 && appDir.cdUp()) {
+        return QDir::toNativeSeparators(appDir.absolutePath());
+    }
+
+    return QDir::toNativeSeparators(appInfo.absolutePath());
+}
+
 bool AppUpdateManager::writeDownloadChunk(QNetworkReply *reply, QString *errorMessage)
 {
     if (reply == nullptr || reply != m_downloadReply || m_downloadFile == nullptr) {
@@ -458,7 +474,7 @@ bool AppUpdateManager::prepareInstallerHandoff(const QString &installerPath, QSt
     }
 
     if (launchMessage != nullptr) {
-        *launchMessage = QStringLiteral("The update installer will start after Sniffy closes and the app will relaunch when installation finishes.");
+        *launchMessage = QStringLiteral("The silent update will start after Sniffy closes and the app will relaunch when installation finishes.");
     }
     return true;
 #elif defined(Q_OS_LINUX)
@@ -476,7 +492,7 @@ bool AppUpdateManager::prepareInstallerHandoff(const QString &installerPath, QSt
     }
 
     if (launchMessage != nullptr) {
-        *launchMessage = QStringLiteral("The downloaded package will open after Sniffy closes.");
+        *launchMessage = QStringLiteral("The update will continue after Sniffy closes. Linux may request administrator authorization to install the package.");
     }
     return true;
 #else
@@ -513,16 +529,23 @@ QString AppUpdateManager::createWindowsInstallerScript(const QString &installerP
         return QString();
     }
 
-    const QString appPath = QDir::toNativeSeparators(QCoreApplication::applicationFilePath());
+    const QString appPath = installedExecutablePath();
+    const QString installRoot = installedRootPath();
     const QString body = QStringLiteral(
         "$installer = '%1'\n"
         "$appPath = '%2'\n"
-        "$pidToWait = %3\n"
+        "$installRoot = '%3'\n"
+        "$pidToWait = %4\n"
         "while (Get-Process -Id $pidToWait -ErrorAction SilentlyContinue) {\n"
         "    Start-Sleep -Milliseconds 500\n"
         "}\n"
+        "$installerLower = $installer.ToLowerInvariant()\n"
         "try {\n"
-        "    Start-Process -FilePath $installer -Wait | Out-Null\n"
+        "    if ($installerLower.EndsWith('.msi')) {\n"
+        "        Start-Process -FilePath 'msiexec.exe' -ArgumentList @('/i', $installer, '/qn', '/norestart', \"INSTALLDIR=$installRoot\") -Wait | Out-Null\n"
+        "    } else {\n"
+        "        Start-Process -FilePath $installer -ArgumentList @('/S', \"/D=$installRoot\") -Wait | Out-Null\n"
+        "    }\n"
         "} finally {\n"
         "    if (Test-Path -LiteralPath $appPath) {\n"
         "        Start-Process -FilePath $appPath | Out-Null\n"
@@ -532,6 +555,7 @@ QString AppUpdateManager::createWindowsInstallerScript(const QString &installerP
         .arg(
             quoteForPowerShell(QDir::toNativeSeparators(installerPath)),
             quoteForPowerShell(appPath),
+            quoteForPowerShell(installRoot),
             QString::number(QCoreApplication::applicationPid())
         );
     script.write(body.toUtf8());
@@ -558,17 +582,33 @@ QString AppUpdateManager::createLinuxInstallerScript(const QString &installerPat
         return QString();
     }
 
+    const QString appPath = installedExecutablePath();
     const QString body = QStringLiteral(
         "#!/bin/sh\n"
         "installer=%1\n"
-        "pid_to_wait=%2\n"
+        "app_path=%2\n"
+        "pid_to_wait=%3\n"
         "while kill -0 \"$pid_to_wait\" 2>/dev/null; do\n"
         "  sleep 1\n"
         "done\n"
-        "xdg-open \"$installer\" >/dev/null 2>&1 &\n"
+        "status=1\n"
+        "if command -v pkexec >/dev/null 2>&1 && command -v dpkg >/dev/null 2>&1; then\n"
+        "  pkexec dpkg -i \"$installer\"\n"
+        "  status=$?\n"
+        "elif [ \"$(id -u)\" -eq 0 ] && command -v dpkg >/dev/null 2>&1; then\n"
+        "  dpkg -i \"$installer\"\n"
+        "  status=$?\n"
+        "else\n"
+        "  xdg-open \"$installer\" >/dev/null 2>&1 &\n"
+        "  status=0\n"
+        "fi\n"
+        "if [ \"$status\" -eq 0 ] && [ -x \"$app_path\" ]; then\n"
+        "  nohup \"$app_path\" >/dev/null 2>&1 &\n"
+        "fi\n"
         "rm -- \"$0\"\n")
         .arg(
             quoteForShell(installerPath),
+            quoteForShell(appPath),
             QString::number(QCoreApplication::applicationPid())
         );
     script.write(body.toUtf8());

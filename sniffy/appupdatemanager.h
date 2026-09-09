@@ -61,6 +61,8 @@ private:
     bool writeDownloadChunk(QNetworkReply *reply, QString *errorMessage = nullptr);
     QString updateDownloadDirectory() const;
     QString targetDownloadPath(const ReleaseInfo &release) const;
+    QString installedExecutablePath() const;
+    QString installedRootPath() const;
     bool prepareInstallerHandoff(const QString &installerPath, QString *errorMessage, QString *launchMessage);
     QString createWindowsInstallerScript(const QString &installerPath, QString *errorMessage) const;
     QString createLinuxInstallerScript(const QString &installerPath, QString *errorMessage) const;
