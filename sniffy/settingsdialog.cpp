@@ -275,6 +275,14 @@ SettingsDialog::SettingsDialog(Authenticator *auth, QWidget *parent) : QDialog(p
     labelAppVersion->setValueAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     aboutLayout->addWidget(labelAppVersion);
 
+    labelUpdateStatus = new WidgetLabel(aboutPage, "Update status", "Not checked yet");
+    labelUpdateStatus->setValueAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    aboutLayout->addWidget(labelUpdateStatus);
+
+    buttonsCheckUpdates = new WidgetButtons(aboutPage, 1, ButtonTypes::NORMAL, "Application updates");
+    buttonsCheckUpdates->setText("Check for updates", 0);
+    aboutLayout->addWidget(buttonsCheckUpdates);
+
     WidgetSeparator *sepLegal = new WidgetSeparator(aboutPage, "Legal");
     aboutLayout->addWidget(sepLegal);
 
@@ -297,6 +305,11 @@ SettingsDialog::SettingsDialog(Authenticator *auth, QWidget *parent) : QDialog(p
     connect(m_firmwareManager, &FirmwareManager::operationFinished, this, &SettingsDialog::onFirmwareOperationFinished);
     connect(m_firmwareManager, &FirmwareManager::firmwareFlashed, this, &SettingsDialog::onFirmwareFlashed);
     connect(buttonsLicenses, &WidgetButtons::clicked, this, &SettingsDialog::showThirdPartyLicenses);
+    connect(buttonsCheckUpdates, &WidgetButtons::clicked, this, [this](int index, int optionalEmitParam) {
+        Q_UNUSED(index);
+        Q_UNUSED(optionalEmitParam);
+        emit checkForUpdatesRequested();
+    });
 
     connect(navigationGroup, QOverload<int>::of(&QButtonGroup::idClicked), pages, &QStackedWidget::setCurrentIndex);
 
@@ -491,6 +504,14 @@ void SettingsDialog::onUserLoginChanged()
         flashLogWindow->clear();
         flashLogWindow->setVisible(false);
         m_lastStatusType = FirmwareManager::MsgInfo; // Reset status
+    }
+}
+
+void SettingsDialog::setUpdateStatusText(const QString &text)
+{
+    if (labelUpdateStatus != nullptr)
+    {
+        labelUpdateStatus->setValue(text);
     }
 }
 

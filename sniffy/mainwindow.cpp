@@ -14,8 +14,12 @@ Right - area for dock widgets
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include "appupdatemanager.h"
+
 #include "GUI/widgetcontrolmodule.h"
 #include "GUI/widgetbuttons.h"
+#include "GUI/stylehelper.h"
+#include <QHBoxLayout>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QStandardPaths>
@@ -24,6 +28,7 @@ Right - area for dock widgets
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QPushButton>
 #include <QToolTip>
 #include <QScreen>
 #include <QGuiApplication>
@@ -70,6 +75,45 @@ MainWindow::MainWindow(QWidget *parent):
     createModulesWidgets();
     setupMainWindowComponents();
 
+    appUpdateManager = new AppUpdateManager(this);
+    connect(sett, &SettingsDialog::checkForUpdatesRequested, this, [this]() {
+        if (appUpdateManager != nullptr) {
+            appUpdateManager->checkForUpdates(true);
+        }
+    });
+    connect(appUpdateManager, &AppUpdateManager::popupMessageRequested, this, &MainWindow::showBottomLeftPopup);
+    connect(appUpdateManager, &AppUpdateManager::updateStatusTextChanged, sett, &SettingsDialog::setUpdateStatusText);
+    connect(appUpdateManager, &AppUpdateManager::updateActionStateChanged, this, [this](const QString &text, bool enabled) {
+        if (updateButton != nullptr) {
+            updateButton->setEnabled(enabled);
+            updateButton->setChecked(true);
+            updateButton->setText(text.startsWith(QStringLiteral("Downloading"), Qt::CaseInsensitive)
+                ? QStringLiteral("updating")
+                : QStringLiteral("update"));
+        }
+    });
+    connect(appUpdateManager, &AppUpdateManager::updateAvailabilityChanged, this, [this](bool available, const QString &version) {
+        if (updateButton == nullptr) {
+            return;
+        }
+
+        updateButton->setVisible(available && !isLeftMenuNarrow);
+        updateButton->setToolTip(available
+            ? QStringLiteral("Install and relaunch version %1").arg(version)
+            : QString());
+    });
+    connect(appUpdateManager, &AppUpdateManager::quitRequested, this, &MainWindow::handleUpdateQuitRequested);
+    if (updateButton != nullptr) {
+        connect(updateButton, &QPushButton::clicked, this, [this]() {
+            if (updateButton != nullptr) {
+                updateButton->setChecked(true);
+            }
+            if (appUpdateManager != nullptr) {
+                appUpdateManager->installAvailableUpdate();
+            }
+        });
+    }
+
     connect(sett, &SettingsDialog::firmwareFlashed, deviceMediator, &DeviceMediator::onFirmwareFlashed);
     connect(sett, &SettingsDialog::massEraseRequested, deviceMediator, &DeviceMediator::onMassEraseRequested);
     connect(sett, &SettingsDialog::massEraseCompleted, deviceMediator, &DeviceMediator::onMassEraseCompleted);
@@ -83,6 +127,12 @@ MainWindow::MainWindow(QWidget *parent):
     // Start the IPC bridge for external AI agent connections
     agentBridge = new AgentBridge(deviceMediator, this);
     agentBridge->start();
+
+    QTimer::singleShot(1500, this, [this]() {
+        if (appUpdateManager != nullptr) {
+            appUpdateManager->checkForUpdates(false);
+        }
+    });
 }
 
 void MainWindow::restoreInitialGeometryFromNewestSession()
@@ -227,12 +277,49 @@ void MainWindow::setupMainWindowComponents(){
     ui->verticalLayout_modules->addWidget(sep);
     QSpacerItem * verticalSpacer = new QSpacerItem(20, 40, QSizePolicy::Minimum, QSizePolicy::Expanding);
     ui->verticalLayout_modules->addItem(verticalSpacer);
+
+    auto *versionRow = new QWidget(ui->centralwidget);
+    auto *versionRowLayout = new QHBoxLayout(versionRow);
+    versionRowLayout->setContentsMargins(0, 0, 0, 0);
+    versionRowLayout->setSpacing(6);
+
 #ifdef APP_VERSION
     WidgetSeparator *sepa = new WidgetSeparator(ui->centralwidget,"Ver " APP_VERSION);
 #else
     WidgetSeparator *sepa = new WidgetSeparator(ui->centralwidget,"Ver x.0.0");
 #endif
-    ui->verticalLayout_modules->addWidget(sepa);
+    sepa->setParent(versionRow);
+    versionRowLayout->addWidget(sepa, 1);
+
+    const auto &palette = Graphics::palette();
+    const QString updateButtonColor = palette.warning;
+    const QString updateButtonTooltipBackground = palette.windowApp;
+    const QString updateButtonTooltipBorder = QColor(palette.textLabel).lighter(135).name();
+    updateButton = new QPushButton(QStringLiteral("update"), versionRow);
+    updateButton->setObjectName(QStringLiteral("updateButton"));
+    updateButton->setCursor(Qt::PointingHandCursor);
+    updateButton->setCheckable(true);
+    updateButton->setChecked(true);
+    updateButton->setVisible(false);
+    updateButton->setMinimumHeight(18);
+    updateButton->setMaximumHeight(18);
+    updateButton->setMinimumWidth(58);
+    updateButton->setStyleSheet(StyleHelper::checkButton(updateButtonColor) +
+        QStringLiteral(
+            "QToolTip {"
+            "background-color: %1;"
+            "color: %2;"
+            "border: 1px solid %3;"
+            "border-radius: 3px;"
+            "padding: 4px 8px;"
+            "}"
+        )
+            .arg(updateButtonTooltipBackground,
+                 palette.textAll,
+                 updateButtonTooltipBorder));
+    versionRowLayout->addWidget(updateButton, 0, Qt::AlignRight | Qt::AlignVCenter);
+
+    ui->verticalLayout_modules->addWidget(versionRow);
     loginInfo = new WidgetLoginInfo();
     ui->verticalLayout_modules->addWidget(loginInfo);
     footer = new WidgetFooter();
@@ -287,6 +374,11 @@ void MainWindow::onLoginInfoChanged()
 void MainWindow::openSettingDialog()
 {
     sett->open();
+}
+
+void MainWindow::handleUpdateQuitRequested()
+{
+    close();
 }
 
 void MainWindow::showBottomLeftPopup(const QString &text)
@@ -346,6 +438,7 @@ void MainWindow::setMenuWide(){
     isLeftMenuNarrow = false;
     updateLeftMenuCompact(false);
     if (loginInfo) loginInfo->setCompact(false);
+    if (updateButton) updateButton->setVisible(appUpdateManager && appUpdateManager->hasAvailableUpdate());
     enforceLeftMenuWidth();
 }
 
@@ -363,6 +456,7 @@ void MainWindow::setMenuNarrow(){
     isLeftMenuNarrow = true;
     updateLeftMenuCompact(true);
     if (loginInfo) loginInfo->setCompact(true);
+    if (updateButton) updateButton->hide();
     enforceLeftMenuWidth();
 }
 

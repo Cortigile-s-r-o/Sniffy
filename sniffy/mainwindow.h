@@ -20,6 +20,8 @@
 #include "agentbridge/agentbridge.h"
 
 class ToastWidget; // Forward declaration
+class AppUpdateManager;
+class QPushButton;
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -48,11 +50,13 @@ private:
     LoginDialog *logindial;
     Authenticator *authenticator; // Shared authenticator for login and token refresh
     AgentBridge *agentBridge = nullptr; // IPC bridge for external AI agents
+    AppUpdateManager *appUpdateManager = nullptr;
 
     bool isLeftMenuNarrow = false; // default to wide menu
     WidgetFooter *footer;
     WidgetLoginInfo *loginInfo;
     QJsonObject sessionRestoreData;
+    QPushButton *updateButton = nullptr;
 
 
     void setMenuNarrow();
@@ -94,6 +98,7 @@ private slots:
     void updateLoginInfo(const QDateTime &validity, const QByteArray &token, bool authenticationSentManual);
     void onLoginInfoChanged(); // Update login info widget when logged out
     void openSettingDialog();
+    void handleUpdateQuitRequested();
     // Show a small popup/toast in the bottom-left corner of the app window
     void showBottomLeftPopup(const QString &text);
     //void onModuleControlShown();
